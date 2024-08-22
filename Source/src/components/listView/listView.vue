@@ -34,7 +34,7 @@ export default {
     },
     getIcon(i) {
       if (!this.listIcons) return '';
-      return this.listIcons[i] || '';
+      return this.listIcons[i] || this.listIcons[0] || '';
     },
   },
 }

@@ -9,7 +9,7 @@
         <div class="section-name">Children</div>
         <ul class="child-list">
           <li v-for="child in getChildren()">
-            <listItem :item="child" :model="model"></listItem>
+            <listItem :item="child" :icon="this.getIcon(child)" :model="model"></listItem>
           </li>
         </ul>
       </div>
@@ -57,6 +57,7 @@ export default {
   watch: { 
     item() {
       this.selectedMaterial = null;
+      this.isMaterialType  = false;
       this.mesh = this.getMesh();
       this.primitives = this.getPrimitives();
       this.children = this.getChildren();
@@ -104,6 +105,9 @@ export default {
     getChildren() {
       if (!this.item) return null;
       return gltf.getChildNodes(this.item && this.item.children, this.model) || null;
+    },
+    getIcon(node) {
+        return (node.mesh != null) ? 'icon-outliner-object' : 'icon-outliner-empty';
     },
     selectMaterial(mat) {
       this.selectedMaterial = mat;

@@ -120,6 +120,10 @@ export default {
 		return model.materials[materialIndex] || {};
 	},	
 
+	getMaterialIndex(material, model) {
+		return model.materials.findIndex( item => material.name === item.name);
+	},
+
 	getTextures(model) {
 		return model.textures || [];
 	},
@@ -159,7 +163,7 @@ export default {
 	getEmissiveTexture(mat, model) {
 		const textures = this.getTextures(model);
 		if (!textures) return null;
-		const textureIndex = (mat && mat.pbrMetallicRoughness && mat.pbrMetallicRoughness.emissiveTexture && mat.pbrMetallicRoughness.emissiveTexture.index) || null;
+		const textureIndex = (mat && mat.emissiveTexture && mat.emissiveTexture.index) || null;
 		return (textureIndex != null && textures[textureIndex]) || null;
 	},
 
@@ -186,6 +190,16 @@ export default {
 		const textureIndex = (mat && mat.normalTexture && mat.normalTexture.index) || null;
 		return (textureIndex != null && textures[textureIndex]) || null;
 	},
+
+	getOcclusionScale(mat) {
+		return (mat && mat.occlusionTexture && mat.occlusionTexture.scale);
+	},
+	getOcclusionTexture(mat, model) {
+		const textures = this.getTextures(model);
+		if (!textures) return null;
+		const textureIndex = (mat && mat.occlusionTexture && mat.occlusionTexture.index) || null;
+		return (textureIndex != null && textures[textureIndex]) || null;
+	},	
 
 	getExtensions(mat) {
 		return (mat && mat.extensions) || []; 

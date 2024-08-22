@@ -13,6 +13,7 @@
   "dependencies": {
     "@gltf-transform/core": "^4.0.8",
     "@gltf-transform/functions": "^4.0.8",
+    "primevue": "^4.0.4",
     "tiny-emitter": "^2.1.0",
     "vue": "^3.4.29"
   },
