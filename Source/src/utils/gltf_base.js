@@ -52,12 +52,6 @@ export default {
 			model.scenes[0].nodes.forEach( (item, index) => {
 				parents[item] = 0; // root nodes have no parent node
 				enumerateChildren(this.getNode(item), item);
-				// const node = this.getNode(index, model);
-				// if (node.children) {
-				// 	node.children.forEach( child => {
-				// 		parents[child] = item;
-				// 	});
-				// }
 			});
 			this.nodeParents = parents;
 		// } catch(e) {
@@ -137,6 +131,10 @@ export default {
 		return model.images[imageIndex];
 	},
 
+	getAnimations(model) {
+		return model.animations || [];
+	},
+
 	getName(node) {
 		return node && node.name || '';
 	},
@@ -204,5 +202,91 @@ export default {
 	getExtensions(mat) {
 		return (mat && mat.extensions) || []; 
 	},
+
+
+	getAccessor(index, model) {
+		return (model.accessors && model.accessors[index]) || null;
+	},
+
+	getBuffer(model) {
+		return model.buffers[0] || null;
+	},
+
+	// === Buffer methods ===
+
+	bufferTypes: {
+		getArrayConstructor(componentType) {
+		  switch (componentType) {
+		    case 5120: return Int8Array;
+		    case 5121: return Uint8Array;
+		    case 5122: return Int16Array;
+		    case 5123: return Uint16Array;
+		    case 5125: return Uint32Array;
+		    case 5126: return Float32Array;
+		    default: throw new Error('Unsupported component type');
+		  }
+		},
+
+		getItemSize(type) {
+		  switch (type) {
+		    case 'SCALAR': return 1;
+		    case 'VEC2': return 2;
+		    case 'VEC3': return 3;
+		    case 'VEC4': return 4;
+		    case 'MAT2': return 4;
+		    case 'MAT3': return 9;
+		    case 'MAT4': return 16;
+		    default: throw new Error('Unsupported type');
+		  }
+		},
+
+		componentSize(componentType) {
+		  switch (componentType) {
+		    case 5120: case 5121: return 1; // 8-bit
+		    case 5122: case 5123: return 2; // 16-bit
+		    case 5125: case 5126: return 4; // 32-bit
+		    default: throw new Error('Unsupported component type');
+		  }
+		},
+
+		readComponent(dataView, byteOffset, componentType) {
+		  switch (componentType) {
+		    case 5120: return dataView.getInt8(byteOffset);
+		    case 5121: return dataView.getUint8(byteOffset);
+		    case 5122: return dataView.getInt16(byteOffset, true);
+		    case 5123: return dataView.getUint16(byteOffset, true);
+		    case 5125: return dataView.getUint32(byteOffset, true);
+		    case 5126: return dataView.getFloat32(byteOffset, true);
+		    default: throw new Error('Unsupported component type');
+		  }
+		},		
+	},
+
+	getAccessorData(accessorIndex, model) {
+	  const accessor = model.accessors[accessorIndex];
+	  const bufferView = model.bufferViews[accessor.bufferView];
+
+	  const buffer = this.g_buffer;
+	  
+	  const componentType = accessor.componentType;
+	  const type = accessor.type;
+	  const count = accessor.count;
+	  
+	  const arrayConstructor = this.bufferTypes.getArrayConstructor(componentType);
+	  const itemSize = this.bufferTypes.getItemSize(type);
+	  
+	  const byteOffset = (bufferView.byteOffset || 0) + (accessor.byteOffset || 0);
+	  const dataView = new DataView(buffer.buffer, byteOffset, bufferView.byteLength);
+	  
+	  const result = new arrayConstructor(count * itemSize);
+	  
+	  for (let i = 0; i < count * itemSize; i++) {
+	    result[i] = this.bufferTypes.readComponent(dataView, i * this.bufferTypes.componentSize(componentType), componentType);
+	  }
+	  
+	  return result;
+	},
+
+
 
 };

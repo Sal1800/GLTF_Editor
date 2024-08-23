@@ -15,6 +15,7 @@ export default {
   props: {
     list: Array,
     listIcons: Array,
+    model: Object,
   },
   components: {
     listItem,

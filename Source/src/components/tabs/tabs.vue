@@ -56,9 +56,11 @@ export default {
     padding: 0.4em;
     border: 1px solid rgb(30,30,30);
     border-radius: 3px;
-    box-shadow: 1px 1px 3px 1px rgba(0,0,0,0.2);
+    background: rgb(49,49,49);
+    box-shadow: inset 1px 1px 3px 1px rgba(0,0,0,0.2);
     max-height: 80vh;
     overflow-y: auto;
+    scrollbar-color: #606060 #282828;
   }
 
   .tab-body {

@@ -144,7 +144,10 @@ export default {
     },
     occlusionImage() {
       return this.getImageURI(this.occlusionTexture);
-    },        
+    },
+    doubleSided() {
+      return (this.material && this.material.doubleSided) || false;
+    },       
   },
   methods: {
     setColorSwatches(mat) {

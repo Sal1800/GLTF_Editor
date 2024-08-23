@@ -1,6 +1,7 @@
 <template>
   <div class="list-item" :class="icon" @click="selectItem">
     <span class="interactive" @click="selectItem">{{itemName}}</span>
+    <slot></slot>
   </div>
 </template>
 
@@ -14,6 +15,8 @@ export default {
     model: Object,
     item: Object,
     icon: String,
+    defaultName: String,
+
   },
   components: {
   },
@@ -26,7 +29,10 @@ export default {
       if (this.item) {
         return this.item.name;
       }
-      return 'Node';
+      return this.defaultName || '';
+    },
+    nodeIndex() {
+      return gltf.getNodeIndex(this.item, this.model) || null;
     },
   },
   methods: {
@@ -34,6 +40,7 @@ export default {
       emitter.$emit('selectItem', {
         item: this.item,
         icon: this.icon,
+        index: this.nodeIndex,
       });
     },
   }
@@ -161,7 +168,31 @@ export default {
   filter: brightness(0) saturate(100%) invert(64%) sepia(34%) saturate(4132%) hue-rotate(323deg) brightness(79%) contrast(97%);
   background-image: url('../../assets/icons/blender_icon_texture_data.svg');
 } 
+.list-item.icon-anim::before {
+  content: ' ';
+  position: absolute;
+  top: 0.3em;
+  left: 0.1em;
+  width: 1em;
+  height: 1em;
+  background-repeat: no-repeat;
+  background-size: 1em;
+  filter: brightness(0) saturate(100%) invert(63%) sepia(56%) saturate(500%) hue-rotate(105deg) brightness(96%) contrast(100%);
+  background-image: url('../../assets/icons/blender_icon_anim_data.svg');
+} 
 
+.list-item.icon-bone::before {
+  content: ' ';
+  position: absolute;
+  top: 0.3em;
+  left: 0.1em;
+  width: 1em;
+  height: 1em;
+  background-repeat: no-repeat;
+  background-size: 1em;
+  filter: brightness(0) saturate(100%) invert(58%) sepia(15%) saturate(1657%) hue-rotate(170deg) brightness(84%) contrast(85%);
+  background-image: url('../../assets/icons/blender_icon_bone_data.svg');
+} 
 
 
 </style>

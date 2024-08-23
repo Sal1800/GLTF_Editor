@@ -4,14 +4,17 @@
   <div id="app">
     <dropzone @files-added="handleFiles" />
     <div class="mainpanel">
-      <inspector :item="selectedNode" :icon="selectedNodeIcon" :doc="g_root" :model="g_model"></inspector>
-      <tabs :tab-names="['Nodes','Materials']" default-tab="Nodes">
+      <inspector :item="selectedNode" :icon="selectedNodeIcon" :index="selectedIndex" :model="g_model"></inspector>
+      <tabs :tab-names="['Nodes','Materials', 'Animations']" default-tab="Nodes">
         <template v-slot:Nodes>
-          <nodeList  :root="g_root" :model="g_model"></nodeList>
+          <nodeList :model="g_model"></nodeList>
         </template>
         <template v-slot:Materials>
-          <listView :list="materialList" :list-icons="materialListIcons"></listView>
+          <listView :list="materialList" :list-icons="['icon-material']" :model="g_model"></listView>
         </template>
+        <template v-slot:Animations>
+          <listView :list="animationsList" :list-icons="['icon-anim']" :model="g_model"></listView>
+        </template>        
       </tabs>
 
     </div>
@@ -46,12 +49,14 @@ export default {
       selectedNode: null,
       selectedNodeIcon: '',
       selectedMaterial: null,
+      selectedIndex: null,
     }
   },
   created() {
     emitter.$on('selectItem', params => {
       this.selectedNodeIcon = params.icon;
       this.selectNode(params.item);
+      this.selectedIndex = params.index;
     });
     window.gltf = gltf;
   },
@@ -59,9 +64,10 @@ export default {
     materialList() {
       return gltf.getMaterials(this.g_model);
     },
-    materialListIcons() {
-      return this.materialList.map(x => 'icon-material');
+    animationsList() {
+      return gltf.getAnimations(this.g_model);
     },
+
   },
   methods: {
     handleFiles(files) {   
@@ -80,7 +86,12 @@ export default {
             }
           } else {
             this.g_bin = new Uint8Array(result);
-            this.readDocument();
+            if (gltf) {
+              gltf.g_buffer = this.g_bin;
+            }
+
+            // read for gltf-transform
+            // this.readDocument();
           }
         }
         reader.onerror = (e) => {
