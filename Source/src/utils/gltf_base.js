@@ -1,10 +1,10 @@
-import { Document, WebIO } from '@gltf-transform/core';
-import { MSFT_texture_dds } from './MSFS_extensions.ts';
+// import { Document, WebIO } from '@gltf-transform/core';
+// import { MSFT_texture_dds } from './MSFS_extensions.ts';
 
-const options = {
-	extensions: [MSFT_texture_dds],
-	dependencies: {},
-};
+// const options = {
+// 	extensions: [MSFT_texture_dds],
+// 	dependencies: {},
+// };
 
 export default {
 
@@ -12,18 +12,18 @@ export default {
 	model : {},
 	nodeParents: [],
 
-	async readFile(path) {
-		const io = new WebIO({credentials: 'include'});
-		this.document = await io.read(path);
-		return this.document;
-	},
+	// async readFile(path) {
+	// 	const io = new WebIO({credentials: 'include'});
+	// 	this.document = await io.read(path);
+	// 	return this.document;
+	// },
 
-	async readJSON(json) {
-		const io = new WebIO();
-		io.registerExtensions(options.extensions);
-		this.document = await io.readJSON(json, options);
-		return this.document;
-	},
+	// async readJSON(json) {
+	// 	const io = new WebIO();
+	// 	io.registerExtensions(options.extensions);
+	// 	this.document = await io.readJSON(json, options);
+	// 	return this.document;
+	// },
 
 
 	// JSON methods
