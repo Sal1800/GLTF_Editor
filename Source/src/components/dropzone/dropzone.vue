@@ -6,19 +6,26 @@
     <div 
       class="drop-zone" 
       @dragover.prevent
+      @dragenter.prevent
       @drop.prevent="handleDrop"
+      tabindex="0"
     >
       <p v-if="files.length === 0">Drop files here</p>
       <ul v-else>
         <li v-for="file in files" :key="file.name">{{ file.name }}</li>
       </ul>
+    </div>
+    <div class="file-input-container">
       <input 
         type="file" 
         multiple 
         ref="fileInput" 
-        style="display: none" 
         @change="handleFileInput"
+        accept=".gltf,.bin"
+        id="file-input"
+        class="file-input"
       >
+      
     </div>
   </div>
 </template>
@@ -43,7 +50,8 @@ export default {
     addFiles(fileList) {
       this.files = [...this.files, ...Array.from(fileList)]
       this.$emit('files-added', this.files)
-    }
+    },
+
   }
 }
 </script>
@@ -60,4 +68,7 @@ export default {
 .heading {
   font-size: 18px;
 }
+
+
+
 </style>
