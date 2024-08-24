@@ -59,6 +59,7 @@ export default {
     background: rgb(49,49,49);
     box-shadow: inset 1px 1px 3px 1px rgba(0,0,0,0.2);
     max-height: 80vh;
+    min-height: 50vh;
     overflow-y: auto;
     scrollbar-color: #606060 #282828;
   }

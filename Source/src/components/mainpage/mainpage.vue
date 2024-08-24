@@ -2,7 +2,10 @@
 
 <template>
   <div id="app">
+    <div>
     <dropzone @files-added="handleFiles" />
+      <div class="error" v-if="fileError">{{fileError}}</div>
+    </div>
     <div class="mainpanel">
       <inspector :item="selectedNode" :icon="selectedNodeIcon" :index="selectedIndex" :model="g_model"></inspector>
       <tabs :tab-names="['Nodes','Materials', 'Animations']" default-tab="Nodes">
@@ -41,6 +44,7 @@ export default {
   },
   data() {
     return {
+      fileError: '',
       g_json: null,
       g_bin: null,
       g_document: {},
@@ -70,7 +74,8 @@ export default {
 
   },
   methods: {
-    handleFiles(files) {   
+    handleFiles(files) {
+      this.fileError = '';
       files.forEach( file => {
         const reader = new FileReader();
         const type = file.type == 'model/gltf+json' ? 'json' : 'bin';
@@ -80,9 +85,10 @@ export default {
             try {
               this.g_json = JSON.parse(result);
               this.g_model = gltf.parseModel(result);
-              this.readDocument();         
+              // this.readDocument();         
             } catch (error) {
               console.error('Error parsing JSON:', error);
+              this.fileError = `Error parsing JSON: ${error}`;
             }
           } else {
             this.g_bin = new Uint8Array(result);
@@ -96,6 +102,7 @@ export default {
         }
         reader.onerror = (e) => {
           console.error('Error reading file:', e);
+          this.fileError = `Error reading file: ${e}`;
         }
         console.log(file);
         if (type == 'json') {
@@ -149,9 +156,11 @@ export default {
   .mainpanel .inspector {
     flex: 1 1 auto;
     margin-top: 24px;
+    min-height: 50vh;
   }  
   .mainpanel .tab-view {
     flex: 1 1 25%;
+    min-height: 50vh;
   }
 
 </style>

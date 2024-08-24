@@ -5,9 +5,11 @@
 
       <div v-if="meshName" class="mesh-name list-item icon-mesh">{{meshName}}</div>
 
-      <template v-if="animations && animations.length">
+      <template v-if="animations && animations.length && !isAnimation">
         <div class="anim-name list-item icon-anim" v-for="anim in animations" @click="selectItem(anim, 'icon-anim')">{{anim.name}}</div>
       </template>
+
+
 
       <div class="section" v-if="children && children.length">
         <div class="section-name">Children</div>
