@@ -7,6 +7,12 @@
         </ul>        
       </li>
     </ul>
+    <!-- TODO: add node snapshot system
+         take a snapshot of the nodelist and name it
+         then you can diff it with another nodelist
+         good for making sure there are no extra nodes in the export
+
+    -->
   </div>
 </template>
 

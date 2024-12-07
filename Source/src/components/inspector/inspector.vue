@@ -5,11 +5,32 @@
 
       <div v-if="meshName" class="mesh-name list-item icon-mesh">{{meshName}}</div>
 
+  
       <template v-if="animations && animations.length && !isAnimation">
         <div class="anim-name list-item icon-anim" v-for="anim in animations" @click="selectItem(anim, 'icon-anim')">{{anim.name}}</div>
       </template>
 
-
+      <!-- Node properties -->
+      <template v-if="nodeRotation">
+<!--         <div class="label">Rotation</div>
+        <div class="VEC4">{{nodeRotation}}</div> -->
+        <edit-view property="rotation" @changedValue="setValue" label="Rotation" :val="nodeRotation" units="°" :showUnits="true"></edit-view>
+      </template>
+      <template v-if="nodeTranslation">
+<!--         <div class="label">Translation</div>
+        <div class="VEC3">{{nodeTranslation}}</div> -->
+        <edit-view property="translation" @changedValue="setValue" label="Translation" :val="nodeTranslation" units="m" :showUnits="false"></edit-view>
+      </template>
+      <template v-if="nodeScale">
+<!--         <div class="label">Scale</div>
+        <div class="warning" v-if="nodeScaleWarning">{{nodeScaleWarning}}</div>
+        <div class="warning" v-if="nodeScaleWarning">{{item.scale}}</div>
+        <div class="VEC3">{{nodeScale}}</div> -->
+        <edit-view property="scale" @changedValue="setValue" label="Scale" :val="nodeScale" units="" :showUnits="false">
+          <div class="warning" v-if="nodeScaleWarning">{{nodeScaleWarning}}</div>
+          <div class="warning" v-if="nodeScaleWarning">{{item.scale}}</div> 
+        </edit-view>
+      </template>    
 
       <div class="section" v-if="children && children.length">
         <div class="section-name">Children</div>
@@ -25,7 +46,7 @@
 
       <div v-if="materialsList && materialsList.length" class="material-section">
         <div class="section-name">Materials</div>
-        <div class="list-item icon-material" :class="{'selected': isSelected(mat)}" v-for="mat in materialsList" @click="selectMaterial(mat)">
+        <div class="list-item icon-material" :class="{'selected': isSelected(mat)}" v-for="mat in materialsList"  @click="selectMaterial(mat)">
           {{mat.name}}
         </div>
       </div>
@@ -39,9 +60,12 @@
 <script>
   import gltf from '../../utils/gltf_base.js';
   import emitter from '../../utils/emitter.js';
+  import { quatToEuler, formatValue, truncValue } from '../../utils/utils.js';
+  import validate from '../../utils/validation.js';
   import materialEdit from '../materialEdit/materialEdit.vue';
   import animEdit from '../animEdit/animEdit.vue';  
   import listItem from '../listItem/listItem.vue'
+  import editView from '../editView/editView.vue'
 
 export default {
   name: 'inspector',
@@ -56,6 +80,7 @@ export default {
     materialEdit,
     animEdit,
     listItem,
+    editView,
   },
   data() {
     return {
@@ -65,6 +90,7 @@ export default {
       selectedMaterial: null,
       selectedAnimation: null,
       itemType: null,
+      validate: validate,
     }
   },
   watch: { 
@@ -132,17 +158,31 @@ export default {
     animations() {
       if (!this.item || !this.model) return [];
       const anims = [];
-      this.model.animations.forEach( (anim, idx) => {
-        anim.channels.forEach( channel => {
-          if (channel.target.node === this.nodeIndex) {
-            anims.push(anim);
-          }
+      if (this.model.animations) {
+        this.model.animations.forEach( (anim, idx) => {
+          anim.channels.forEach( channel => {
+            if (channel.target.node === this.nodeIndex) {
+              anims.push(anim);
+            }
+          });
         });
-      });
+      }
       return anims;
     },
     itemIcon() {
       return `icon-${this.itemType}`;
+    },
+    nodeRotation() {
+      return this.item && truncValue(quatToEuler(this.item.rotation)) || null;
+    },
+    nodeTranslation() {
+      return this.item && truncValue(this.item.translation) || null;
+    },
+    nodeScale() {
+      return this.item && truncValue(this.item.scale) || null;
+    },
+    nodeScaleWarning() {
+      return validate.isNonUniformScale(this.nodeScale) ? "Warning: Non-Uniform Scale" : "";
     },
   },
   methods: {
@@ -191,6 +231,21 @@ export default {
         index: index,
       });
     },
+
+    setValue(args) {
+      if (args && args.property && args.value) {
+        switch (args.property) {
+          case "rotation":
+            // TODO convert from Euler to quat
+
+          case "translation":
+
+          default:
+            gltf.setNodeProperty(this.item, args.property, args.value, this.model);
+        }
+      }
+      console.log(args)
+    },
   }
 }
 </script>
@@ -208,6 +263,24 @@ export default {
     opacity: 0.7;
     padding-top: 0.4em;
     background: rgba(23,23,23,0.3);
+  }
+
+ .inspector .warning {
+    color: rgb(239 191 5);
+    position: relative;
+    padding-left: 1.5em;
+  }
+ .inspector .warning::before {
+    content: ' ';
+    position: absolute;
+    top: 0.4em;
+    left: 0.1em;
+    width: 1em;
+    height: 1em;
+    background-repeat: no-repeat;
+    background-size: 1em;
+    filter: brightness(0) saturate(100%) invert(66%) sepia(51%) saturate(2298%) hue-rotate(12deg) brightness(112%) contrast(96%);
+    background-image: url('../../assets/icons/blender_icon_warning_large.svg');
   }
 
   .inspector .node-name {

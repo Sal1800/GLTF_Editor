@@ -4,19 +4,36 @@
       <!-- <div class="item-name" v-for="channel in channels">{{channel}}</div> -->
       <div class="list-item icon-object" @click="selectChannel(i)" v-for="target, i in targets" :class="{selected: selectedChannel === i}">{{target.node.name}} : {{target.path}}</div>  
 
+      <div class="extensions-list" v-if="anim.extensions">
+        <div class="label">Extensions</div>
+        <div v-for="[key, obj] of Object.entries(anim.extensions)">
+          {{key}}
+          <div v-for="[key2, valu] of Object.entries(obj)">{{key2}}: {{valu}}</div>
+        </div>
+      </div>
+
+      <div class="sampler-list" v-if="samplers">
+        <div class="label">Samplers</div>
+        <button :class="{'selected': this.selectedSamplerIndex === index}" v-for="item, index in samplers" @click="selectChannel(index)">
+            Sampler {{index}}
+        </button>
+      </div>      
+
       <template v-if="selectedNode"> 
         <div class="label" v-if="selectedNode.translation">Node Translation</div>
-        <div v-if="selectedNode.translation">{{selectedNode.translation}}</div>
+        <div v-if="selectedNode.translation">{{getFormattedVec3(selectedNode.translation)}}</div>
         <div class="label" v-if="selectedNode.rotation">Node Rotation</div>
-        <div v-if="selectedNode.rotation">{{selectedNode.rotation}}</div>
+        <div v-if="selectedNode.rotation">{{getFormattedQuat(selectedNode.rotation)}}</div>
       </template>
 
       <template v-if="selectedSampler"> 
         <div class="label">Sampler</div>
-        <div>{{selectedSampler.sampler.interpolation}}</div>
-        <div class="cols">
-          <div class="label">Keyframe (Input)</div>
-          <div class="label">Value (Output)</div>
+        <div>Accessors: {{samplerAccessors.join(', ')}}</div>
+        <div>BufferViews: {{samplerBufferViews.join(', ')}}</div>
+        <div>{{selectedSampler.sampler.interpolation}} {{`${getFrameCount(selectedSampler)} frames`}}</div>
+        <div class="cols label">
+          <div>Keyframe (Input)</div>
+          <div>Value (Output) {{samplerOutputType}}</div>
         </div>
         <div class="cols" v-for="frames in samplerKeyframes">
           <div>{{frames[0]}}</div>
@@ -29,12 +46,13 @@
              <!-- <div v-for="dat in selectedSampler.output.chunks">{{dat.map(d => d.toFixed(4))}}</div>    -->
       </template>
 
+
   </div>
 </template>
 
 <script>
   import gltf from '../../utils/gltf_base.js';
-  import { quatToEuler } from '../../utils/utils.js';
+  import { quatToEuler, formatValue } from '../../utils/utils.js';
   import listView from '../listView/listView.vue';
 
 export default {
@@ -50,6 +68,7 @@ export default {
     return {
       selectedChannel: 0,
       selectedSampler: {},
+      selectedSamplerIndex: 0,
       selectedNode: null,
     }
   },
@@ -79,18 +98,29 @@ export default {
       });
     },
     samplerKeyframes() {
-      if (!this.selectedSampler) return [];
+      if (!this.selectedSampler) return [[],[]];
         return this.selectedSampler.input.chunks.map((item, index) => {
           const kf = this.getKeyframe(item);
-          const vl = this.getEuler(this.selectedSampler.output.chunks[index]).map(d => d.toFixed(4));
-          return [kf, vl];
+          // const vl = this.getEuler(this.selectedSampler.output.chunks[index]).map(d => d.toFixed(4));
+          const vl = formatValue(quatToEuler(this.selectedSampler.output.chunks[index], true));
+          return [index, vl]; //[kf, vl];
         });
     },
+    samplerOutputType() {
+      return this.selectedSampler && this.selectedSampler.output.accessor.type || '';
+    },
+    samplerAccessors() {
+      return [this.selectedSampler.input.index, this.selectedSampler.output.index] || [];
+    },
+    samplerBufferViews() {
+      return [this.selectedSampler.input.accessor.bufferView, this.selectedSampler.output.accessor.bufferView] || [];
+    }    
   },
   methods: {
     selectChannel(index) {
       this.selectedChannel = index;
       this.selectedSampler = this.getSampler(index);
+      this.selectedSamplerIndex = index;
       this.selectedNode = this.targets[index].node;
     },
     getSampler(index) {
@@ -112,6 +142,7 @@ export default {
         accessor,
         data,
         chunks,
+        index,
       };
     },
     getAccessor(index) {
@@ -123,14 +154,14 @@ export default {
     getKeyframe(time) {
       return Math.floor(time / 0.041666);
     },
-    getEuler(quat) {
-      if (!quat || quat.length != 4) return quat;
-      const euler = quatToEuler(quat);
-      const degrees = euler.map( i => this.toDegrees(i));
-      return degrees;
+    getFormattedQuat(quat) {
+      return quat ? formatValue(quatToEuler(quat, true)) : quat;
     },
-    toDegrees(rad) {
-      return rad * (180/Math.PI);
+    getFormattedVec3(vec3) {
+      return vec3 && formatValue(vec3);
+    },
+    getFrameCount(sampler) {
+      return (sampler && sampler.input && sampler.input.chunks.length) || 0;
     },
   }
 }
@@ -148,7 +179,20 @@ export default {
     flex-direction: row;
   }
   .cols > div {
-    flex: 0 0 50%;
+    flex: 0 0 auto;
+    min-width: 100px;
+  }
+
+  button {
+    display: block;
+    background: transparent;
+    border: none;
+    padding: 0.2em 8px 0.2em 0;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+  button:hover, button.selected {
+    background: rgba(121, 199, 242, 0.2);
   }
 
 

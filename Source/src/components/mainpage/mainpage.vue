@@ -3,8 +3,12 @@
 <template>
   <div id="app">
     <div>
-    <dropzone @files-added="handleFiles" />
+      <dropzone @files-added="handleFiles" />
       <div class="error" v-if="fileError">{{fileError}}</div>
+      <div class="save-file">
+        <button  @click="saveFile">Save</button>
+        <button id="download" ref="downloadBtn">Download</button>
+      </div>
     </div>
     <div class="mainpanel">
       <inspector :item="selectedNode" :icon="selectedNodeIcon" :index="selectedIndex" :model="g_model"></inspector>
@@ -54,6 +58,7 @@ export default {
       selectedNodeIcon: '',
       selectedMaterial: null,
       selectedIndex: null,
+
     }
   },
   created() {
@@ -92,8 +97,9 @@ export default {
             }
           } else {
             this.g_bin = new Uint8Array(result);
+            // this.g_bin = new ArrayBuffer(result);
             if (gltf) {
-              gltf.g_buffer = this.g_bin;
+              gltf.setBuffer(this.g_bin);
             }
 
             // read for gltf-transform
@@ -130,6 +136,14 @@ export default {
           console.error('Failed to parse GLTF Document: ', e);
         }
       }
+    },
+    saveFile() {
+      const fileContent = JSON.stringify(this.g_json);
+      const file = new Blob([fileContent], {type: 'model/gltf+json'});
+      const url = URL.createObjectURL(file);
+      this.$refs.downloadBtn.setAttribute('href', url);
+      this.$refs.downloadBtn.setAttribute('download', 'model.gltf');
+
     },
     getBufferName(json) {
       try {

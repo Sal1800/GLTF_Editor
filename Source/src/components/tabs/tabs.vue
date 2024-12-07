@@ -1,7 +1,9 @@
 <template>
   <div class="tab-view">
     <div class="tab-list">
-      <div v-for="tab, idx in tabNames" tabindex="0" @click="selectTab(tab)">{{tab}}</div>
+      <div v-for="tab, idx in tabNames" tabindex="0" @click="selectTab(tab)">
+        <div class="tab-name" :class="{selected: tab == selectedTab}">{{tab}}</div>
+      </div>
     </div>
     <div class="tabs">
       <div class="tab-body" v-for="tab in tabNames" :id="tab" :class="{selected: tab == selectedTab}">
@@ -62,6 +64,15 @@ export default {
     min-height: 50vh;
     overflow-y: auto;
     scrollbar-color: #606060 #282828;
+  }
+  .tab-name {
+    display: inline-block;
+    padding: 0.1em 0.3em;
+    border-radius: 3px 3px 0 0;
+  }
+  .tab-name.selected, .tab-name:hover {
+    background: rgba(121, 199, 242, 0.2);
+    
   }
 
   .tab-body {

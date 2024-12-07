@@ -13,19 +13,24 @@
         A: {{baseColorFactor[3]}}<br>
       </div>
       <div class="label" v-if="baseColorTexture">Base Color Texture</div>
-      <div class="item-name" v-if="baseColorTexture">{{baseColorImage}}</div>
+      <div class="item-name list-item icon-image" v-if="baseColorTexture">{{baseColorImage}}</div>
       <div class="label" v-if="metallicFactor != null">Metallic Factor</div>
+      <div class="warning" v-if="metallicWarning(material) && metallicFactor != null">Has Metallic Texture</div>
       <div class="item-name" v-if="metallicFactor != null">{{metallicFactor}}</div>
       <div class="label" v-if="roughnessFactor != null">Roughness Factor</div>
-      <div class="item-name" v-if="roughnessFactor != null">{{roughnessFactor}}</div>      
+      <div class="warning" v-if="roughnessWarning(material) && roughnessFactor != null">Has Roughness Texture</div>
+      <div class="item-name" v-if="roughnessFactor != null">
+          <edit-view property="roughnessFactor" @changedValue="setRoughnessFactor" :val="roughnessFactor" ></edit-view>
+      </div>      
       <div class="label" v-if="metallicRoughnessTexture">Metallic/Roughness Texture</div>
-      <div class="item-name" v-if="metallicRoughnessTexture">{{metallicRoughnessImage}}</div>
+      <div class="item-name list-item icon-image" v-if="metallicRoughnessTexture">{{metallicRoughnessImage}}</div>
       <div class="label" v-if="occlusionTexture">Occlusion Texture</div>
-      <div class="item-name" v-if="occlusionTexture">{{occlusionImage}}</div>
+      <div class="item-name list-item icon-image" v-if="occlusionTexture">{{occlusionImage}}</div>
 
+      <div class="warning" v-if="occlusionWarning(material)">Occlusion Error</div>
 
       <div class="label" v-if="normalTexture">Normal Texture</div>
-      <div class="item-name" v-if="normalTexture">{{normalImage}}</div>
+      <div class="item-name list-item icon-image" v-if="normalTexture">{{normalImage}}</div>
       <div class="label" v-if="normalScale">Normal Scale</div>
       <div class="item-name" v-if="normalScale">{{normalScale}}</div>      
       <div class="label" v-if="alphaMode">Alpha Mode</div>
@@ -37,7 +42,7 @@
         B: {{emissiveFactor[2]}}<br>
       </div>
       <div class="label" v-if="emissiveTexture">Emissive Texture</div>
-      <div class="item-name" v-if="emissiveTexture">{{emissiveImage}}</div>
+      <div class="item-name list-item icon-image" v-if="emissiveTexture">{{emissiveImage}}</div>
 
       <div class="extensions-list" v-if="material.extensions">
         <div class="label">Extensions</div>
@@ -61,8 +66,10 @@
 
 <script>
   import gltf from '../../utils/gltf_base.js';
+  import validate from '../../utils/validation.js';
   import listView from '../listView/listView.vue';
   import ColorPicker from 'primevue/colorpicker';
+  import editView from '../editView/editView.vue'
 
 export default {
   name: 'materialEdit',
@@ -75,13 +82,19 @@ export default {
   components: {
     listView,
     ColorPicker,
+    editView,
   },
   data() {
     return {
+      metallicWarning: validate.hasFractionalMetallicTexture,
+      roughnessWarning: validate.hasFractionalRoughnessTexture,
+      occlusionWarning: validate.missingOcclusion,
+      hasMetallic: validate.hasMetallicRoughnessTexture,
       occlusionStrength: 0,
       userList: [],
       baseColorSwatch: [],
       extensionList: [],
+      selectedMaterial: null,
     }
   },
   watch: { 
@@ -89,6 +102,7 @@ export default {
       handler(mat) {
         this.getUsers(mat);
         this.setColorSwatches(mat);
+        this.selectedMaterial = mat;
       },
       immediate: true,
     },
@@ -156,6 +170,11 @@ export default {
         g: this.baseColorFactor[1] * 255,
         b: this.baseColorFactor[2] * 255,
       };
+    },
+    setRoughnessFactor(args) {
+      if (args && args.property && args.value) {
+        this.selectedMaterial.pbrMetallicRoughness.roughnessFactor = args.value;
+      }
     },
     getImageURI(texture) {
       if (!texture) return '';

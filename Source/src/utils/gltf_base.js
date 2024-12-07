@@ -11,6 +11,11 @@ export default {
 	document: {},
 	model : {},
 	nodeParents: [],
+	g_buffer: null,
+
+	setBuffer(bufferData) {
+		this.g_buffer = bufferData;
+	},
 
 	// async readFile(path) {
 	// 	const io = new WebIO({credentials: 'include'});
@@ -76,10 +81,12 @@ export default {
 	},
 
 	getNodeIndex(node, model) {
+		if (!model) return
 		return model.nodes.findIndex( item => node.name === item.name);
 	},
 
 	getNodeByIndex(nodeIndex, model) {
+		if (!model) return
 		return model.nodes && this.model.nodes[nodeIndex] || {};
 	},	
 
@@ -259,34 +266,235 @@ export default {
 		    case 5126: return dataView.getFloat32(byteOffset, true);
 		    default: throw new Error('Unsupported component type');
 		  }
-		},		
+		},
+	  writeComponent(dataView, byteOffset, componentType, value) {
+	    switch (componentType) {
+	      case 5120: dataView.setInt8(byteOffset, value); break;
+	      case 5121: dataView.setUint8(byteOffset, value); break;
+	      case 5122: dataView.setInt16(byteOffset, true, value); break;
+	      case 5123: dataView.setUint16(byteOffset, true, value); break;
+	      case 5125: dataView.setUint32(byteOffset, true, value); break;
+	      case 5126: dataView.setFloat32(byteOffset, value, true); break;
+	      default: throw new Error('Unsupported component type');
+	    }
+	  },
 	},
 
 	getAccessorData(accessorIndex, model) {
 	  const accessor = model.accessors[accessorIndex];
 	  const bufferView = model.bufferViews[accessor.bufferView];
+		if (!accessor || !bufferView) {
+		  throw new Error('Invalid accessor or bufferView index');
+		}
 
 	  const buffer = this.g_buffer;
 	  
 	  const componentType = accessor.componentType;
 	  const type = accessor.type;
 	  const count = accessor.count;
-	  
+
 	  const arrayConstructor = this.bufferTypes.getArrayConstructor(componentType);
 	  const itemSize = this.bufferTypes.getItemSize(type);
-	  
+
 	  const byteOffset = (bufferView.byteOffset || 0) + (accessor.byteOffset || 0);
-	  const dataView = new DataView(buffer.buffer, byteOffset, bufferView.byteLength);
-	  
+	  // console.log(componentType + ' ' + byteOffset + ' ' + bufferView.byteLength);
+
+		const bufferSize = buffer.buffer.byteLength;
+		if (bufferView.byteOffset + bufferView.byteLength > bufferSize) {
+		  console.log(`BufferView too large: ${byteOffset + bufferView.byteLength} > ${bufferSize}`);
+		  console.log(`accessorIndex: ${accessorIndex}`);
+		}
+
+		const totalBytes = count * itemSize * this.bufferTypes.componentSize(componentType);
+		if (accessor.byteOffset + totalBytes > bufferView.byteLength) {
+		    throw new Error('Accessor exceeds bufferView bounds');
+		}
+
+	  const actualByteLength = Math.min(bufferView.byteLength, buffer.byteLength - byteOffset);
+	  const dataView = new DataView(buffer.buffer, byteOffset, actualByteLength);
+
 	  const result = new arrayConstructor(count * itemSize);
 	  
-	  for (let i = 0; i < count * itemSize; i++) {
-	    result[i] = this.bufferTypes.readComponent(dataView, i * this.bufferTypes.componentSize(componentType), componentType);
-	  }
+		const bytesPerElement = this.bufferTypes.componentSize(componentType);
+		for (let i = 0; i < count * itemSize; i++) {
+		  const elementOffset = i * bytesPerElement;
+		  if (elementOffset + bytesPerElement > actualByteLength) {
+		    throw new Error('Reading beyond buffer bounds');
+		  }
+		  result[i] = this.bufferTypes.readComponent(dataView, elementOffset, componentType);
+		}
 	  
 	  return result;
 	},
 
+	// Modify accessor and its bufferView
+	// use only for small changes
+	setAccessorData(accessorIndex, model, newData) {
+	  const accessor = model.accessors[accessorIndex];
+	  const bufferView = model.bufferViews[accessor.bufferView];
+	  const buffer = this.g_buffer;
+	  
+	  const componentType = accessor.componentType;
+	  const type = accessor.type;
+	  const count = accessor.count;
+	  
+	  const itemSize = this.bufferTypes.getItemSize(type);
+	  
+	  // Validate input data length
+	  if (newData.length !== count * itemSize) {
+	    throw new Error(`Data length mismatch. Expected ${count * itemSize} values, got ${newData.length}`);
+	  }
+	  
+	  const byteOffset = (bufferView.byteOffset || 0) + (accessor.byteOffset || 0);
+	  
+	  // Validate buffer bounds
+	  const totalBytes = count * itemSize * this.bufferTypes.componentSize(componentType);
+	  if (accessor.byteOffset + totalBytes > bufferView.byteLength) {
+	    throw new Error('Write operation would exceed bufferView bounds');
+	  }
+	  
+	  // Create DataView for writing
+	  const dataView = new DataView(buffer.buffer, byteOffset, totalBytes);
+	  
+	  // Write the new data
+	  for (let i = 0; i < newData.length; i++) {
+	    this.bufferTypes.writeComponent(
+	      dataView, 
+	      i * this.bufferTypes.componentSize(componentType),
+	      componentType,
+	      newData[i]
+	    );
+	  }
+	},
+
+	// Insert a new bufferView and accessor
+	// remember to update the accessor references to point to the new accessor
+	addNewAccessorData(model, newData, componentType, type) {
+    // Calculate new data size
+    const itemSize = this.bufferTypes.getItemSize(type);
+    const componentSize = this.bufferTypes.componentSize(componentType);
+    const byteLength = newData.length * componentSize;
+
+    // Create new bufferView
+    const newBufferView = {
+        buffer: 0,  // assuming using the first buffer
+        byteOffset: model.buffers[0].byteLength,  // append to end
+        byteLength: byteLength,
+        name: "newBufferView"
+    };
+    
+    // Create new accessor
+    const newAccessor = {
+        bufferView: model.bufferViews.length,  // index of new bufferView
+        componentType: componentType,
+        count: newData.length / itemSize,
+        type: type,
+        byteOffset: 0,  // starting at beginning of new bufferView
+        name: "newAccessor"
+    };
+
+    // Extend the buffer
+    const oldBuffer = this.g_buffer.buffer;
+    const newBuffer = new ArrayBuffer(oldBuffer.byteLength + byteLength);
+    
+    // Copy old data
+    new Uint8Array(newBuffer).set(new Uint8Array(oldBuffer));
+    
+    // Write new data
+    const dataView = new DataView(newBuffer, oldBuffer.byteLength, byteLength);
+    for (let i = 0; i < newData.length; i++) {
+        this.bufferTypes.writeComponent(
+            dataView,
+            i * componentSize,
+            componentType,
+            newData[i]
+        );
+    }
+
+    // Update model
+    model.bufferViews.push(newBufferView);
+    model.accessors.push(newAccessor);
+    model.buffers[0].byteLength += byteLength;
+    
+    // Update buffer reference
+    this.g_buffer = new Uint8Array(newBuffer);
+
+    return model.accessors.length - 1; // Return new accessor index
+	},
+
+	/**
+		Rebuilds the buffer based on the model data
+	*/
+	repackBuffer(model) {
+	  let currentOffset = 0;
+	  const newBuffer = new ArrayBuffer(model.buffers[0].byteLength); // Initial size, we'll trim later
+	  
+	  // Track which bufferViews we've processed
+	  const processedViews = new Set();
+	  
+	  // First pass: Copy accessor data in order of use
+	  model.accessors.forEach((accessor, accessorIndex) => {
+	    if (!processedViews.has(accessor.bufferView)) {
+	      const bufferView = model.bufferViews[accessor.bufferView];
+	      const oldOffset = bufferView.byteOffset;
+	      
+	      // Copy this bufferView's data to new position
+	      new Uint8Array(newBuffer, currentOffset).set(
+	        new Uint8Array(this.g_buffer.buffer, oldOffset, bufferView.byteLength)
+	      );
+	      
+	      // Update bufferView offset
+	      bufferView.byteOffset = currentOffset;
+	      currentOffset += bufferView.byteLength;
+	      
+	      // Align currentOffset to 4-byte boundary (optional but recommended)
+	      currentOffset = Math.ceil(currentOffset / 4) * 4;
+	      
+	      processedViews.add(accessor.bufferView);
+	    }
+	  });
+	  
+	  // Second pass: Copy any remaining bufferViews not referenced by accessors
+	  model.bufferViews.forEach((bufferView, index) => {
+	    if (!processedViews.has(index)) {
+	      const oldOffset = bufferView.byteOffset;
+	      
+	      new Uint8Array(newBuffer, currentOffset).set(
+	        new Uint8Array(this.g_buffer.buffer, oldOffset, bufferView.byteLength)
+	      );
+	      
+	      bufferView.byteOffset = currentOffset;
+	      currentOffset += bufferView.byteLength;
+	      currentOffset = Math.ceil(currentOffset / 4) * 4;
+	    }
+	  });
+	  
+	  // Trim the buffer to actual size
+	  const finalBuffer = new ArrayBuffer(currentOffset);
+	  new Uint8Array(finalBuffer).set(new Uint8Array(newBuffer, 0, currentOffset));
+	  
+	  // Update buffer size in model
+	  model.buffers[0].byteLength = currentOffset;
+	  
+	  // Update instance buffer
+	  this.g_buffer = new Uint8Array(finalBuffer);
+	  
+	  return model;
+	},
+
+
+	// ============  set model values ==============
+	setNodeProperty(node, property, value, model) {
+		if (!model && !node) return;
+		const nodeIndex = this.getNodeIndex(node, model);
+		if (nodeIndex !== null) {
+			try {
+				model.nodes[nodeIndex][property] = value;
+			} catch (e) {
+				console.log(`Error setting node ${nodeIndex} ${property} : ${value} (${e})`);
+			}
+		}
+	},
 
 
 };

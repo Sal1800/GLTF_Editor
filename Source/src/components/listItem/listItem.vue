@@ -144,6 +144,21 @@ export default {
   filter: brightness(0) saturate(100%) invert(64%) sepia(34%) saturate(4132%) hue-rotate(323deg) brightness(79%) contrast(97%);
   background-image: url('../../assets/icons/blender_icon_material_data.svg');
 } 
+
+.list-item.icon-image::before {
+  content: ' ';
+  position: absolute;
+  top: 0.3em;
+  left: 0.1em;
+  width: 1em;
+  height: 1em;
+  background-repeat: no-repeat;
+  background-size: 1em;
+  filter: brightness(0) saturate(100%) invert(64%) sepia(34%) saturate(4132%) hue-rotate(323deg) brightness(79%) contrast(97%);
+  background-image: url('../../assets/icons/blender_icon_image_data.svg');
+} 
+
+
 .list-item.icon-mesh::before {
   content: ' ';
   position: absolute;
