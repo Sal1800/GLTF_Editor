@@ -19,7 +19,9 @@ jobs:
 
       - name: Install dependencies
         uses: bahmutov/npm-install@v1
-
+          with:
+              working-directory: ./Source
+              
       - name: Build project
         run: npm run build
 
