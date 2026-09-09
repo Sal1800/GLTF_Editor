@@ -1,7 +1,7 @@
 <template>
   <div class="list-view">
     <div class="items" v-for="(item, i) in list">
-      <listItem :item="item" :icon="getIcon(i)" :model="model"></listItem>
+      <listItem :item="item" :selected="selectedItem" :icon="getIcon(i)" :model="model"></listItem>
     </div>
   </div>
 </template>
@@ -22,7 +22,7 @@ export default {
   },
   data() {
     return {
-
+      selectedItem: null,
     }
   },
   computed: {
@@ -30,6 +30,7 @@ export default {
   methods: {
     selectItem(item){
       if (item) {
+        this.selectedItem = item;
         emitter.$emit('selectItem', item);
       }
     },

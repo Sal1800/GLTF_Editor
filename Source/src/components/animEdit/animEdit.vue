@@ -59,6 +59,7 @@ export default {
   name: 'animEdit',
   props: {
     model: Object,
+    buffer: Object,
     anim: Object,
   },
   components: {
@@ -149,7 +150,7 @@ export default {
       return gltf.getAccessor(index, this.model) || {};
     },
     getAccessorData(index) {
-      return gltf.getAccessorData(index, this.model) || [];
+      return gltf.getAccessorData(index, this.model, this.buffer) || [];
     },
     getKeyframe(time) {
       return Math.floor(time / 0.041666);

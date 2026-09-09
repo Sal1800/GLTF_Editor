@@ -42,7 +42,7 @@
       </div>
 
 
-      <animEdit v-if="isAnimation" :anim="item" :model="model" ></animEdit>  
+      <animEdit v-if="isAnimation" :anim="item" :model="model" :buffer="buffer" ></animEdit>  
 
       <div v-if="materialsList && materialsList.length" class="material-section">
         <div class="section-name">Materials</div>
@@ -72,6 +72,7 @@ export default {
   props: {
     doc: Object,
     model: Object,
+    buffer: Object,
     item: Object,
     icon: String,
     index: Number,

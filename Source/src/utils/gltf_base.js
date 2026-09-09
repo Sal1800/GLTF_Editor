@@ -13,6 +13,7 @@ export default {
 	nodeParents: [],
 	g_buffer: null,
 
+	// TODO: remove this global and use method args instead
 	setBuffer(bufferData) {
 		this.g_buffer = bufferData;
 	},
@@ -87,7 +88,7 @@ export default {
 
 	getNodeByIndex(nodeIndex, model) {
 		if (!model) return
-		return model.nodes && this.model.nodes[nodeIndex] || {};
+		return model.nodes && model.nodes[nodeIndex] || {};
 	},	
 
 	getChildNodes(list, model) {
@@ -99,7 +100,7 @@ export default {
 
 	getParentNode(nodeIndex) {
 		return this.nodeParents[nodeIndex] || {}
-	},	
+	},
 
 	getMeshes(model) {
 		return model.meshes || [];
@@ -280,14 +281,14 @@ export default {
 	  },
 	},
 
-	getAccessorData(accessorIndex, model) {
+	getAccessorData(accessorIndex, model, bin) {
 	  const accessor = model.accessors[accessorIndex];
 	  const bufferView = model.bufferViews[accessor.bufferView];
 		if (!accessor || !bufferView) {
 		  throw new Error('Invalid accessor or bufferView index');
 		}
 
-	  const buffer = this.g_buffer;
+	  const buffer = bin || this.g_buffer;
 	  
 	  const componentType = accessor.componentType;
 	  const type = accessor.type;
@@ -332,7 +333,7 @@ export default {
 	setAccessorData(accessorIndex, model, newData) {
 	  const accessor = model.accessors[accessorIndex];
 	  const bufferView = model.bufferViews[accessor.bufferView];
-	  const buffer = this.g_buffer;
+	  const buffer = this.g_buffer; // TODO: replace this with an arg
 	  
 	  const componentType = accessor.componentType;
 	  const type = accessor.type;
@@ -394,7 +395,7 @@ export default {
     };
 
     // Extend the buffer
-    const oldBuffer = this.g_buffer.buffer;
+    const oldBuffer = this.g_buffer.buffer;  // TODO: replace this with an arg
     const newBuffer = new ArrayBuffer(oldBuffer.byteLength + byteLength);
     
     // Copy old data
@@ -439,6 +440,7 @@ export default {
 	      const oldOffset = bufferView.byteOffset;
 	      
 	      // Copy this bufferView's data to new position
+	       // TODO: replace this.g_buffer with an arg
 	      new Uint8Array(newBuffer, currentOffset).set(
 	        new Uint8Array(this.g_buffer.buffer, oldOffset, bufferView.byteLength)
 	      );
@@ -455,6 +457,7 @@ export default {
 	  });
 	  
 	  // Second pass: Copy any remaining bufferViews not referenced by accessors
+	  // TODO: replace this.g_buffer with an arg
 	  model.bufferViews.forEach((bufferView, index) => {
 	    if (!processedViews.has(index)) {
 	      const oldOffset = bufferView.byteOffset;

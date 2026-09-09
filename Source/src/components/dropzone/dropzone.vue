@@ -1,8 +1,6 @@
 <template>
   <div class="file-dropper">
-    <div class="heading">Import GLTF files </div>
     <div class="instructions">Drop .gltf and .bin files to load model.</div>
-
     <div 
       class="drop-zone" 
       @dragover.prevent
@@ -12,7 +10,7 @@
     >
       <p v-if="files.length === 0">Drop files here</p>
       <ul v-else>
-        <li v-for="file in files" :key="file.name">{{ file.name }}</li>
+        <li v-for="file in files" :key="file">{{ file }}</li>
       </ul>
     </div>
     <div class="file-input-container">
@@ -48,10 +46,28 @@ export default {
       this.addFiles(selectedFiles)
     },
     addFiles(fileList) {
-      this.files = [...this.files, ...Array.from(fileList)]
-      this.$emit('files-added', this.files)
+      this.$emit('files-added', Array.from(fileList))
     },
+    setFilename(fileName) {
+      const isGltf = (fn => fn.match(/\.gltf$/i));
+      const isBin = (fn => fn.match(/\.bin$/i));
 
+      // filter to only have one each gltf and bin
+      /*
+      if (isGltf(fileName)) {
+        this.files = this.files.filter(f => !isGltf(f));
+      } else {
+        this.files = this.files.filter(f => !isBin(f));
+      }
+      */
+
+      // filter duplicate names
+      if (!this.files.includes(fileName)) {
+        this.files.push(fileName);
+      }
+
+      
+    },
   }
 }
 </script>
@@ -61,14 +77,19 @@ export default {
   border: 2px dashed #ccc;
   border-radius: 20px;
   width: 480px;
-  padding: 20px;
+  padding: 8px 16px;
+  max-height: 200px;
+  overflow-y: auto;
   text-align: center;
   font-family: Arial, sans-serif;
 }
 .heading {
   font-size: 18px;
 }
-
+.drop-zone li {
+  text-align: left;
+  line-height: 1.4em;
+}
 
 
 </style>

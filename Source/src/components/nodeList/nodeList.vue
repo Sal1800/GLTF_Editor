@@ -3,7 +3,7 @@
     <ul class="scenes">
       <li class="sceneItem list-item icon-scene" v-for="scene, index in scenes">{{scene.name}}
         <ul class="nodes">
-          <treeNode v-for="node in this.getChildNodes(scene)" :node="node" :model="model"></treeNode>
+          <treeNode v-for="node in this.getChildNodes(scene)" :node="node" :model="model" :selectedNode="selectedNode"></treeNode>
         </ul>        
       </li>
     </ul>
@@ -25,6 +25,7 @@ export default {
   props: {
     root: Object,
     model: Object,
+    selectedNode: Object,
   },
   components: {
     treeNode,

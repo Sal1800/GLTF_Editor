@@ -1,8 +1,8 @@
 <template>
   <li class="tree-node" v-if="getParent">
-    <listItem :item="node" :icon="getIcon()" :model="model"></listItem>
+    <listItem :item="node" :selected="selected" :icon="getIcon()" :model="model"></listItem>
     <ul class="nodes">
-        <treeNode :node="child" v-for="child in getChildren()" :model="model"></treeNode>
+        <treeNode :node="child" v-for="child in getChildren()" :model="model" :selectedNode="selectedNode"></treeNode>
     </ul>
   </li>
 </template>
@@ -20,6 +20,7 @@ export default {
   props: {
     model: Object,
     node: Object,
+    selectedNode: Object,
   },
   data() {
     return {
@@ -27,7 +28,9 @@ export default {
     }
   },
   computed: {
-  
+    selected() {
+      return this.selectedNode && this.selectedNode.name == this.node.name;
+    },
   },
   methods: {
     getChildren() {

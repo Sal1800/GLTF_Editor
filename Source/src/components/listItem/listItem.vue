@@ -1,5 +1,5 @@
 <template>
-  <div class="list-item" :class="icon" @click="selectItem">
+  <div class="list-item" :class="[ icon, selected ? 'selected' : '' ]" @click="selectItem">
     <span class="interactive" @click="selectItem">{{itemName}}</span>
     <slot></slot>
   </div>
@@ -16,7 +16,7 @@ export default {
     item: Object,
     icon: String,
     defaultName: String,
-
+    selected: Boolean,
   },
   components: {
   },
@@ -54,6 +54,10 @@ export default {
 
 .list-item > span {
   white-space: nowrap;
+}
+
+.list-item.selected {
+  background: #fca10330;
 }
 
 .list-item .interactive {
